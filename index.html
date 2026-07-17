@@ -1,1 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kids Star App - Version 1.1</title>
+<style>
+body{font-family:Arial,sans-serif;background:#0b1020;color:white;text-align:center;margin:0;padding:40px}
+.container{max-width:700px;margin:auto}
+button{display:block;width:100%;padding:16px;margin:12px 0;font-size:20px;border:none;border-radius:12px;cursor:pointer}
+#menu{display:block}
+#star{display:none}
+canvas{background:white;border-radius:10px;margin-top:20px}
+.small{opacity:.7;margin-top:30px}
+</style>
+</head>
+<body>
+<div class="container">
+<div id="menu">
+<h1>⭐ Kids Star App</h1>
+<h2>Magic Star Drawer</h2>
+<p>Choose Your Star</p>
+<button onclick="showStar()">⭐ 5-Pointed Star</button>
+<button onclick="comingSoon()">⭐ 7-Pointed Star</button>
+<button onclick="comingSoon()">⭐ 8-Pointed Star</button>
+<button onclick="comingSoon()">⭐ 12-Pointed Star</button>
+<p class="small">Version 1.1</p>
+</div>
 
+<div id="star">
+<h2>⭐ 5-Pointed Star</h2>
+<canvas id="c" width="400" height="400"></canvas><br><br>
+<button onclick="backMenu()">⬅ Back</button>
+</div>
+</div>
+
+<script>
+function comingSoon(){alert("Coming Soon!");}
+function showStar(){
+ document.getElementById("menu").style.display="none";
+ document.getElementById("star").style.display="block";
+ draw();
+}
+function backMenu(){
+ document.getElementById("star").style.display="none";
+ document.getElementById("menu").style.display="block";
+}
+function draw(){
+ const c=document.getElementById("c");
+ const ctx=c.getContext("2d");
+ ctx.clearRect(0,0,c.width,c.height);
+ const cx=200,cy=200,r=150;
+ ctx.beginPath();
+ for(let i=0;i<5;i++){
+   let a=(-90+i*144)*Math.PI/180;
+   let x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+   if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+ }
+ ctx.closePath();
+ ctx.strokeStyle="gold";
+ ctx.lineWidth=4;
+ ctx.stroke();
+}
+</script>
+</body>
+</html>
