@@ -1,0 +1,182 @@
+/* ---------- Body ---------- */
+
+body{
+    margin:0;
+    padding:0;
+
+    font-family:'Quicksand', sans-serif;
+
+    background:linear-gradient(
+        to bottom,
+        #aee9ff 0%,
+        #bff6ff 35%,
+        #8be7d3 70%,
+        #fff4cf 100%
+    );
+
+    min-height:100vh;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+
+/* ---------- Main Card ---------- */
+
+.container{
+
+    width:90%;
+    max-width:700px;
+
+    background:rgba(255,255,255,0.82);
+
+    border-radius:25px;
+
+    padding:30px;
+
+    box-shadow:0 15px 35px rgba(0,0,0,.15);
+
+    backdrop-filter:blur(10px);
+
+    text-align:center;
+
+}
+
+
+/* ---------- Title ---------- */
+
+h1{
+
+    font-family:'Fredoka', cursive;
+
+    font-size:48px;
+
+    color:#ff7eb6;
+
+    margin-bottom:10px;
+
+}
+
+
+.subtitle{
+
+    font-size:22px;
+
+    color:#0d7f9f;
+
+    margin-bottom:35px;
+
+}
+
+
+/* ---------- Buttons ---------- */
+
+button{
+
+    width:100%;
+
+    margin:12px 0;
+
+    padding:18px;
+
+    border:none;
+
+    border-radius:18px;
+
+    cursor:pointer;
+
+    font-size:22px;
+
+    font-family:'Fredoka', cursive;
+
+    background:linear-gradient(
+        135deg,
+        #ffd8ec,
+        #fff4b5
+    );
+
+    color:#444;
+
+    transition:.25s;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.12);
+
+}
+
+
+button:hover{
+
+    transform:translateY(-3px) scale(1.02);
+
+}
+
+
+button:active{
+
+    transform:scale(.97);
+
+}
+
+
+/* ---------- Canvas ---------- */
+
+canvas{
+
+    background:white;
+
+    border-radius:20px;
+
+    margin-top:25px;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.15);
+
+}
+
+
+/* ---------- Button Area ---------- */
+
+.buttonArea{
+
+    margin-top:25px;
+
+}
+
+
+/* ---------- Star Title ---------- */
+
+#starTitle{
+
+    font-family:'Fredoka', cursive;
+
+    color:#008b8b;
+
+    font-size:36px;
+
+}
+
+
+/* ---------- Responsive ---------- */
+
+@media (max-width:600px){
+
+    h1{
+
+        font-size:36px;
+
+    }
+
+    button{
+
+        font-size:18px;
+
+    }
+
+    canvas{
+
+        width:100%;
+        height:auto;
+
+    }
+
+}
