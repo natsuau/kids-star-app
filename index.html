@@ -1,66 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kids Star App - Version 1.1</title>
-<style>
-body{font-family:Arial,sans-serif;background:#0b1020;color:white;text-align:center;margin:0;padding:40px}
-.container{max-width:700px;margin:auto}
-button{display:block;width:100%;padding:16px;margin:12px 0;font-size:20px;border:none;border-radius:12px;cursor:pointer}
-#menu{display:block}
-#star{display:none}
-canvas{background:white;border-radius:10px;margin-top:20px}
-.small{opacity:.7;margin-top:30px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Kids Star App</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<div class="container">
-<div id="menu">
-<h1>⭐ Kids Star App</h1>
-<h2>Magic Star Drawer</h2>
-<p>Choose Your Star</p>
-<button onclick="showStar()">⭐ 5-Pointed Star</button>
-<button onclick="comingSoon()">⭐ 7-Pointed Star</button>
-<button onclick="comingSoon()">⭐ 8-Pointed Star</button>
-<button onclick="comingSoon()">⭐ 12-Pointed Star</button>
-<p class="small">Version 1.1</p>
-</div>
 
-<div id="star">
-<h2>⭐ 5-Pointed Star</h2>
-<canvas id="c" width="400" height="400"></canvas><br><br>
-<button onclick="backMenu()">⬅ Back</button>
-</div>
-</div>
+    <div class="container">
 
-<script>
-function comingSoon(){alert("Coming Soon!");}
-function showStar(){
- document.getElementById("menu").style.display="none";
- document.getElementById("star").style.display="block";
- draw();
-}
-function backMenu(){
- document.getElementById("star").style.display="none";
- document.getElementById("menu").style.display="block";
-}
-function draw(){
- const c=document.getElementById("c");
- const ctx=c.getContext("2d");
- ctx.clearRect(0,0,c.width,c.height);
- const cx=200,cy=200,r=150;
- ctx.beginPath();
- for(let i=0;i<5;i++){
-   let a=(-90+i*144)*Math.PI/180;
-   let x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
-   if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
- }
- ctx.closePath();
- ctx.strokeStyle="gold";
- ctx.lineWidth=4;
- ctx.stroke();
-}
-</script>
+        <h1>⭐ Kids Star App</h1>
+        <p class="subtitle">Choose Your Magic Star</p>
+
+        <!-- Menu -->
+        <div id="menu">
+
+            <button onclick="openStar('5')">
+                ⭐ 5 Pointed Star
+            </button>
+
+            <button onclick="openStar('7')">
+                ⭐ 7 Pointed Star
+            </button>
+
+            <button onclick="openStar('8')">
+                ⭐ 8 Pointed Star
+            </button>
+
+            <button onclick="openStar('10')">
+                ⭐ 10 Pointed Star
+            </button>
+
+        </div>
+
+        <!-- Star Screen -->
+        <div id="starPage" style="display:none;">
+
+            <h2 id="starTitle"></h2>
+
+            <canvas
+                id="starCanvas"
+                width="500"
+                height="500">
+            </canvas>
+
+            <div class="buttonArea">
+
+                <button id="startButton">
+                    ▶ Start
+                </button>
+
+                <button onclick="backMenu()">
+                    ⬅ Back
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+
 </body>
+
 </html>
