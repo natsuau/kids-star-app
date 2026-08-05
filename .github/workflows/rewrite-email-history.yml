@@ -1,0 +1,61 @@
+name: Rewrite commit email history once
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  rewrite:
+    if: github.event.head_commit.message == 'Rewrite commit email history once'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out full repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Rewrite commit identities and force-push cleaned history
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SAFE_NAME: natsuau
+          SAFE_EMAIL: 305954220+natsuau@users.noreply.github.com
+        run: |
+          set -euo pipefail
+
+          python -m pip install --disable-pip-version-check git-filter-repo
+
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*' --tags --prune
+          while IFS= read -r ref; do
+            branch="${ref#refs/remotes/origin/}"
+            [ "$branch" = "HEAD" ] && continue
+            git branch -f "$branch" "$ref"
+          done < <(git for-each-ref --format='%(refname)' refs/remotes/origin/)
+
+          cat > /tmp/rewrite_identity.py <<'PY'
+          commit.author_name = b"natsuau"
+          commit.author_email = b"305954220+natsuau@users.noreply.github.com"
+          commit.committer_name = b"natsuau"
+          commit.committer_email = b"305954220+natsuau@users.noreply.github.com"
+          PY
+
+          git filter-repo --force --commit-callback "$(cat /tmp/rewrite_identity.py)"
+
+          git config user.name "$SAFE_NAME"
+          git config user.email "$SAFE_EMAIL"
+          git checkout main
+          git rm -f .github/workflows/rewrite-email-history.yml
+          git commit -m 'Remove one-time history cleanup workflow'
+
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          while IFS= read -r branch; do
+            git push origin "refs/heads/${branch}:refs/heads/${branch}" --force
+          done < <(git for-each-ref --format='%(refname:short)' refs/heads/)
+
+          while IFS= read -r tag; do
+            git push origin "refs/tags/${tag}:refs/tags/${tag}" --force
+          done < <(git for-each-ref --format='%(refname:short)' refs/tags/)
