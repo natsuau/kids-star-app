@@ -10,124 +10,69 @@
 <body>
   <main class="app-shell">
     <header class="app-header">
-      <p class="eyebrow">Draw, learn, and shine!</p>
-      <h1><span aria-hidden="true">⭐</span> Kids Star App</h1>
-      <p class="subtitle">てんを つないで ほしを かこう</p>
+      <img class="header-mascot" src="assets/mr-star.png" alt="手を振るミスタースターくん">
+      <div>
+        <p class="eyebrow">Draw, learn, and shine!</p>
+        <h1>Kids Star App</h1>
+        <p class="subtitle">てんを つないで ほしを かこう</p>
+      </div>
     </header>
 
     <section id="menuPage" class="page" aria-labelledby="menuTitle">
-      <h2 id="menuTitle">Choose Your Magic Star</h2>
-
-      <div class="category-card">
-        <div class="category-heading">
-          <span class="category-icon" aria-hidden="true">✏️</span>
-          <div>
-            <h3>One-Stroke Stars</h3>
-            <p>ひとふでで かける ほし</p>
-          </div>
-        </div>
-        <div id="oneStrokeMenu" class="star-grid">
-          <button class="star-button" type="button" data-star="5">
-            <span class="star-symbol" aria-hidden="true">★</span>
-            <span>5 Pointed Star</span>
-            <span class="clear-badge" data-clear-for="5" hidden>Clear!</span>
-          </button>
-          <button class="star-button" type="button" data-star="7">
-            <span class="star-symbol" aria-hidden="true">★</span>
-            <span>7 Pointed Star</span>
-            <span class="clear-badge" data-clear-for="7" hidden>Clear!</span>
-          </button>
-          <button class="star-button" type="button" data-star="8">
-            <span class="star-symbol" aria-hidden="true">★</span>
-            <span>8 Pointed Star</span>
-            <span class="clear-badge" data-clear-for="8" hidden>Clear!</span>
-          </button>
-          <button class="star-button" type="button" data-star="10">
-            <span class="star-symbol" aria-hidden="true">★</span>
-            <span>10 Pointed Star</span>
-            <span class="clear-badge" data-clear-for="10" hidden>Clear!</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="category-card secondary-category">
-        <div class="category-heading">
-          <span class="category-icon" aria-hidden="true">✌️</span>
-          <div>
-            <h3>Two-Stroke Stars</h3>
-            <p>2かいに わけて かく ほし</p>
-          </div>
-        </div>
-        <div class="star-grid one-item">
-          <button class="star-button" type="button" data-star="6">
-            <span class="star-symbol" aria-hidden="true">✡</span>
-            <span>6 Pointed Star</span>
-            <span class="clear-badge" data-clear-for="6" hidden>Clear!</span>
-          </button>
-        </div>
+      <h2 id="menuTitle">すきな ほしを えらぼう</h2>
+      <div id="starMenu" class="star-grid">
+        <button class="star-button" type="button" data-star="5"><canvas class="star-preview" width="150" height="150" data-preview="5"></canvas><span>5芒星</span><span class="clear-badge" data-clear-for="5" hidden>Clear!</span></button>
+        <button class="star-button" type="button" data-star="7"><canvas class="star-preview" width="150" height="150" data-preview="7"></canvas><span>7芒星</span><span class="clear-badge" data-clear-for="7" hidden>Clear!</span></button>
+        <button class="star-button" type="button" data-star="8"><canvas class="star-preview" width="150" height="150" data-preview="8"></canvas><span>8芒星</span><span class="clear-badge" data-clear-for="8" hidden>Clear!</span></button>
+        <button class="star-button" type="button" data-star="10"><canvas class="star-preview" width="150" height="150" data-preview="10"></canvas><span>10芒星</span><span class="clear-badge" data-clear-for="10" hidden>Clear!</span></button>
+        <button class="star-button" type="button" data-star="12"><canvas class="star-preview" width="150" height="150" data-preview="12"></canvas><span>12芒星</span><span class="clear-badge" data-clear-for="12" hidden>Clear!</span></button>
+        <button id="secretStarButton" class="star-button secret locked" type="button" data-star="16" disabled aria-describedby="secretHint">
+          <span class="lock-mark" aria-hidden="true">🔒</span>
+          <canvas class="star-preview" width="150" height="150" data-preview="16"></canvas>
+          <span>ひみつの16芒星</span>
+          <small id="secretHint">12芒星をクリアすると あらわれるよ！</small>
+          <span class="clear-badge" data-clear-for="16" hidden>Clear!</span>
+        </button>
       </div>
     </section>
 
     <section id="modePage" class="page" aria-labelledby="selectedStarTitle" hidden>
-      <button class="back-link" id="modeBackButton" type="button">← Star Menu</button>
-      <div class="mode-heading">
-        <span class="large-star" aria-hidden="true">★</span>
-        <h2 id="selectedStarTitle"></h2>
-        <p>どの れんしゅうを する？</p>
-      </div>
-
+      <button class="back-button" id="modeBackButton" type="button">← もどる</button>
+      <div class="mode-heading"><img src="assets/mr-star.png" alt="" aria-hidden="true"><h2 id="selectedStarTitle"></h2><p>どの れんしゅうを する？</p></div>
       <div class="mode-list">
-        <button class="mode-button watch" type="button" data-mode="watch">
-          <span class="mode-number">1</span>
-          <span class="mode-copy">
-            <strong>書き方を見る</strong>
-            <small>うごく せんで じゅんばんを みよう</small>
-          </span>
-          <span aria-hidden="true">▶</span>
-        </button>
-        <button class="mode-button trace" type="button" data-mode="trace">
-          <span class="mode-number">2</span>
-          <span class="mode-copy">
-            <strong>なぞりながら書いてみる</strong>
-            <small>くろい せんを おいかけよう</small>
-          </span>
-          <span aria-hidden="true">✍️</span>
-        </button>
-        <button class="mode-button try" type="button" data-mode="try">
-          <span class="mode-number">3</span>
-          <span class="mode-copy">
-            <strong>自分で一から書いてみる</strong>
-            <small>うすい えんと てんだけで ちょうせん</small>
-          </span>
-          <span aria-hidden="true">✨</span>
-        </button>
+        <button class="mode-button watch" type="button" data-mode="watch"><span class="mode-number">1</span><span><strong>書き方を見る</strong><small>うごく せんで じゅんばんを みよう</small></span><span>▶</span></button>
+        <button class="mode-button trace" type="button" data-mode="trace"><span class="mode-number">2</span><span><strong>なぞりながら書く</strong><small>ひかる てんを つないでみよう</small></span><span>✍️</span></button>
+        <button class="mode-button try" type="button" data-mode="try"><span class="mode-number">3</span><span><strong>自分で一筆書き</strong><small>ゆびを はなさず さいごまで</small></span><span>✨</span></button>
       </div>
     </section>
 
     <section id="practicePage" class="page" aria-labelledby="practiceTitle" hidden>
-      <div class="practice-topbar">
-        <button class="back-link" id="practiceBackButton" type="button">← れんしゅうを えらぶ</button>
-        <span id="modeLabel" class="mode-label"></span>
-      </div>
+      <div class="practice-topbar"><button class="back-button" id="practiceBackButton" type="button">← もどる</button><span id="modeLabel" class="mode-label"></span></div>
       <h2 id="practiceTitle"></h2>
       <p id="instruction" class="instruction" aria-live="polite"></p>
+
+      <div id="speedControls" class="speed-controls" hidden>
+        <span>おてほんの はやさ</span>
+        <button type="button" data-speed="slow">ゆっくり</button>
+        <button type="button" data-speed="normal" class="selected">ふつう</button>
+      </div>
 
       <div class="canvas-wrap" id="canvasWrap">
         <canvas id="starCanvas" width="600" height="600" aria-label="芒星を描くキャンバス"></canvas>
         <div id="clearCelebration" class="celebration" role="status" hidden>
-          <span class="celebration-stars" aria-hidden="true">✨ ⭐ ✨</span>
-          <strong>Clear!</strong>
-          <span>できたね！</span>
+          <div class="sparkle-field" aria-hidden="true">✦　✨　✦</div>
+          <div class="mascot-stage" aria-hidden="true"><span class="butt-trail">☆</span><img src="assets/mr-star.png" alt=""></div>
+          <strong>Clear!</strong><span>できたね！</span>
         </div>
       </div>
 
       <div class="practice-actions">
         <button id="replayButton" class="action-button replay" type="button">▶ もういちど見る</button>
-        <button id="resetButton" class="action-button reset" type="button">↻ もういちど</button>
+        <button id="undoButton" class="action-button undo" type="button">↩ ひとつもどる</button>
+        <button id="resetButton" class="action-button reset" type="button">↻ さいしょから</button>
       </div>
     </section>
   </main>
-
   <script src="script.js"></script>
 </body>
 </html>
