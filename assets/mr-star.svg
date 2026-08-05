@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="title desc">
+  <title id="title">ミスタースターくん</title>
+  <desc id="desc">黄色い星の体で手を振って笑うキャラクター</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff56a"/><stop offset=".55" stop-color="#ffd329"/><stop offset="1" stop-color="#f6ad18"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="7" stdDeviation="5" flood-color="#b77b16" flood-opacity=".28"/></filter>
+  </defs>
+  <g filter="url(#shadow)" stroke="#d99716" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="url(#gold)" d="M120 20l25 57 62 5-47 41 14 61-54-32-54 32 14-61-47-41 62-5z"/>
+    <path fill="none" d="M52 133c-16 3-30 15-34 29"/>
+    <path fill="url(#gold)" d="M18 162c-4-14 3-29 14-32 8-2 12 6 8 13 9-4 15 4 11 12 9-1 12 10 5 16-14 11-33 5-38-9z"/>
+    <path fill="none" d="M188 132c20-7 26-25 27-40"/>
+    <path fill="url(#gold)" d="M215 93c-9-2-14-11-10-18 3-6 10-5 14 0 0-10 10-14 16-8 5 5 2 12-3 16 9-1 13 9 7 15-7 7-16 1-24-5z"/>
+    <path fill="none" d="M92 181l-8 48M149 181l9 48"/>
+    <ellipse fill="url(#gold)" cx="76" cy="246" rx="27" ry="16" transform="rotate(-12 76 246)"/>
+    <ellipse fill="url(#gold)" cx="166" cy="246" rx="27" ry="16" transform="rotate(12 166 246)"/>
+  </g>
+  <g>
+    <ellipse cx="91" cy="103" rx="19" ry="23" fill="#fff"/><ellipse cx="149" cy="103" rx="19" ry="23" fill="#fff"/>
+    <ellipse cx="94" cy="106" rx="12" ry="16" fill="#573a24"/><ellipse cx="146" cy="106" rx="12" ry="16" fill="#573a24"/>
+    <circle cx="89" cy="99" r="5" fill="#fff"/><circle cx="141" cy="99" r="5" fill="#fff"/>
+    <path d="M75 78q14-12 28 0M137 78q14-12 28 0" fill="none" stroke="#7a4c20" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="74" cy="133" r="9" fill="#f3a04a" opacity=".55"/><circle cx="166" cy="133" r="9" fill="#f3a04a" opacity=".55"/>
+    <path d="M95 132q25 27 50 0c-4 29-46 34-50 0z" fill="#8b3d28" stroke="#8b3d28" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M105 151q15-8 30 0" fill="none" stroke="#ff8d8d" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg>
