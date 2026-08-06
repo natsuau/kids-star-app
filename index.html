@@ -21,7 +21,7 @@
     <section id="menuPage" class="page" aria-labelledby="menuTitle">
       <div class="menu-heading">
         <h2 id="menuTitle">すきな ほしを えらぼう</h2>
-        <button id="benefitButton" class="info-button" type="button" aria-haspopup="dialog" aria-controls="benefitDialog">ⓘ この遊びのねらい</button>
+        <button id="mathButton" class="info-button" type="button" aria-haspopup="dialog" aria-controls="mathDialog">ⓘ ほしの算数コラム</button>
       </div>
       <div id="starMenu" class="star-grid">
         <button class="star-button" type="button" data-star="5"><canvas class="star-preview" width="150" height="150" data-preview="5"></canvas><span>5芒星</span><span class="clear-badge" data-clear-for="5" hidden>Clear!</span></button>
@@ -30,11 +30,7 @@
         <button class="star-button" type="button" data-star="10"><canvas class="star-preview" width="150" height="150" data-preview="10"></canvas><span>10芒星</span><span class="clear-badge" data-clear-for="10" hidden>Clear!</span></button>
         <button class="star-button star-wide" type="button" data-star="12"><canvas class="star-preview" width="150" height="150" data-preview="12"></canvas><span>12芒星</span><span class="clear-badge" data-clear-for="12" hidden>Clear!</span></button>
         <button id="secretStarButton" class="star-button secret locked" type="button" data-star="16" disabled aria-describedby="secretHint"><span class="lock-mark" aria-hidden="true">🔒</span><canvas class="star-preview" width="150" height="150" data-preview="16"></canvas><span>ひみつの16芒星</span><small id="secretHint">12芒星をクリアすると あらわれるよ！</small><span class="clear-badge" data-clear-for="16" hidden>Clear!</span></button>
-        <button id="freeDrawButton" class="star-button free-draw-card" type="button">
-          <span class="doodle-preview" aria-hidden="true"><span>★</span><span>〰</span><span>✏️</span></span>
-          <span>じゆうに おえかき</span>
-          <small>しろい かみに すきなものを かこう</small>
-        </button>
+        <button id="freeDrawButton" class="star-button free-draw-card" type="button"><span class="doodle-preview" aria-hidden="true"><span>★</span><span>〰</span><span>✏️</span></span><span>じゆうに おえかき</span><small>しろい かみに すきなものを かこう</small></button>
       </div>
     </section>
 
@@ -44,7 +40,7 @@
       <div class="mode-list">
         <button class="mode-button watch" type="button" data-mode="watch"><span class="mode-number">1</span><span><strong>書き方を見る</strong><small>うごく せんで じゅんばんを みよう</small></span><span>▶</span></button>
         <button class="mode-button trace" type="button" data-mode="trace"><span class="mode-number">2</span><span><strong>なぞりながら書く</strong><small>ひかる てんを つないでみよう</small></span><span>✍️</span></button>
-        <button class="mode-button try" type="button" data-mode="try"><span class="mode-number">3</span><span><strong>自分で一筆書き</strong><small>ゆびを はなさず さいごまで</small></span><span>✨</span></button>
+        <button class="mode-button try" type="button" data-mode="try"><span class="mode-number">3</span><span><strong>自分で一筆書き</strong><small>どのてんからでも ちょうせん</small></span><span>✨</span></button>
       </div>
     </section>
 
@@ -52,60 +48,40 @@
       <div class="practice-topbar"><button class="back-button" id="practiceBackButton" type="button">← もどる</button><span id="modeLabel" class="mode-label"></span></div>
       <h2 id="practiceTitle"></h2><p id="instruction" class="instruction" aria-live="polite"></p>
       <div id="speedControls" class="speed-controls" hidden><span>おてほんの はやさ</span><button type="button" data-speed="slow">ゆっくり</button><button type="button" data-speed="normal" class="selected">ふつう</button></div>
-      <div class="canvas-wrap" id="canvasWrap"><canvas id="starCanvas" width="600" height="600" aria-label="芒星を描くキャンバス"></canvas><div id="clearCelebration" class="celebration" role="status" hidden><div class="sparkle-field" aria-hidden="true">✦　✨　✦</div><div class="mascot-stage" aria-hidden="true"><span class="butt-trail">☆</span><img src="assets/mr-star.svg" alt=""></div><strong>Clear!</strong><span>できたね！</span></div></div>
+      <div class="canvas-wrap"><canvas id="starCanvas" width="600" height="600" aria-label="芒星を描くキャンバス"></canvas><div id="clearCelebration" class="celebration" role="status" hidden><div class="sparkle-field" aria-hidden="true">✦　✨　✦</div><div class="mascot-stage" aria-hidden="true"><span class="butt-trail">☆</span><img src="assets/mr-star.svg" alt=""></div><strong>Clear!</strong><span>できたね！</span></div></div>
       <div class="practice-actions"><button id="replayButton" class="action-button replay" type="button">▶ もういちど見る</button><button id="undoButton" class="action-button undo" type="button">↩ ひとつもどる</button><button id="resetButton" class="action-button reset" type="button">↻ さいしょから</button></div>
     </section>
 
     <section id="drawPage" class="page" aria-labelledby="drawTitle" hidden>
       <div class="practice-topbar"><button class="back-button" id="drawBackButton" type="button">← もどる</button><span class="mode-label drawing-label">じゆうに おえかき</span></div>
-      <h2 id="drawTitle">しろい かみに かいてみよう</h2>
-      <p id="drawInstruction" class="instruction" aria-live="polite">ゆびで すきなものを かいてね。</p>
+      <h2 id="drawTitle">しろい かみに かいてみよう</h2><p id="drawInstruction" class="instruction" aria-live="polite">ゆびで すきなものを かいてね。</p>
       <div class="canvas-wrap free-canvas-wrap"><canvas id="freeCanvas" width="600" height="600" aria-label="自由に絵を描く白いキャンバス"></canvas></div>
-      <div class="drawing-actions">
-        <button id="drawUndoButton" class="action-button undo" type="button">↩ ひとつもどる</button>
-        <button id="drawClearButton" class="action-button reset" type="button">🧹 ぜんぶけす</button>
-        <button id="drawSaveButton" class="action-button save" type="button">💾 ほぞんする</button>
-        <button id="galleryButton" class="action-button gallery" type="button">🖼️ さくひん 0/3</button>
-      </div>
+      <div class="drawing-actions"><button id="drawUndoButton" class="action-button undo" type="button">↩ ひとつもどる</button><button id="drawClearButton" class="action-button reset" type="button">🧹 ぜんぶけす</button><button id="drawSaveButton" class="action-button save" type="button">💾 ほぞんする</button><button id="galleryButton" class="action-button gallery" type="button">🖼️ さくひん 0/3</button></div>
       <p class="privacy-note">さくひんは、このたんまつの中だけに3まいまで保存されます。</p>
     </section>
 
     <section id="galleryPage" class="page" aria-labelledby="galleryTitle" hidden>
-      <button class="back-button" id="galleryBackButton" type="button">← おえかきにもどる</button>
-      <h2 id="galleryTitle">わたしの さくひん</h2>
-      <p id="galleryStatus" class="instruction" aria-live="polite"></p>
-      <div id="galleryGrid" class="gallery-grid"></div>
-      <p class="privacy-note">画像は外部へ送信されません。この端末のブラウザ内だけに保存されます。</p>
+      <button class="back-button" id="galleryBackButton" type="button">← おえかきにもどる</button><h2 id="galleryTitle">わたしの さくひん</h2><p id="galleryStatus" class="instruction" aria-live="polite"></p><div id="galleryGrid" class="gallery-grid"></div><p class="privacy-note">画像は外部へ送信されません。この端末のブラウザ内だけに保存されます。</p>
     </section>
   </main>
 
-  <dialog id="benefitDialog" class="app-dialog" aria-labelledby="benefitTitle">
+  <dialog id="mathDialog" class="app-dialog" aria-labelledby="mathTitle">
     <div class="dialog-inner">
-      <h2 id="benefitTitle">一筆書きで育つ力</h2>
-      <p>一筆書きでは、始める点や進む順番を考えながら、指を止めずに線をつないでいきます。</p>
-      <p>形全体を見通す力、次の動きを予測する力、目で見た場所へ指を動かす力を使う遊びです。</p>
-      <p>うまく描けないときも、「次はどこから始めよう？」と試す経験につながります。完成することだけでなく、考えながら何度も挑戦する過程を楽しんでください。</p>
-      <p class="dialog-note">※効果には個人差があります。自由な遊びとしてお楽しみください。</p>
-      <button class="dialog-close" type="button" data-close-dialog="benefitDialog">とじる</button>
+      <h2 id="mathTitle">ほしの形にかくれている算数</h2>
+      <p>星形多角形は、円の上に並んだ点から、いつも同じ数だけ先の点へ進んで線を結ぶと作れます。</p>
+      <p><strong>このアプリで進む点の数</strong></p>
+      <ul class="math-list">
+        <li>5芒星：2つ先</li><li>7芒星：3つ先</li><li>8芒星：3つ先</li><li>10芒星：3つ先</li><li>12芒星：5つ先</li><li>16芒星：7つ先</li>
+      </ul>
+      <p>点の数を <strong>n</strong>、何個先へ進むかを <strong>d</strong> として、星の形を <strong>{n/d}</strong> と表すことがあります。</p>
+      <p>たとえば、5芒星は <strong>{5/2}</strong>、7芒星は <strong>{7/3}</strong>、8芒星は <strong>{8/3}</strong>、10芒星は <strong>{10/3}</strong>、12芒星は <strong>{12/5}</strong>、16芒星は <strong>{16/7}</strong> です。</p>
+      <p class="dialog-note">どの点から始めても、同じ数だけ先へ進み続けると、同じ星の形になります。</p>
+      <button class="dialog-close" type="button" data-close-dialog="mathDialog">とじる</button>
     </div>
   </dialog>
 
-  <dialog id="replaceDialog" class="app-dialog" aria-labelledby="replaceTitle">
-    <div class="dialog-inner">
-      <h2 id="replaceTitle">どの さくひんと いれかえる？</h2>
-      <p>さくひんは3まいまでだよ。のこしたい絵をまちがえて消さないように、えらんでね。</p>
-      <div id="replaceGrid" class="replace-grid"></div>
-      <button class="dialog-close secondary" type="button" data-close-dialog="replaceDialog">やめる</button>
-    </div>
-  </dialog>
-
-  <dialog id="viewerDialog" class="app-dialog viewer-dialog" aria-labelledby="viewerTitle">
-    <div class="dialog-inner">
-      <h2 id="viewerTitle">さくひんを みせよう</h2>
-      <img id="viewerImage" class="viewer-image" alt="保存した作品">
-      <button class="dialog-close" type="button" data-close-dialog="viewerDialog">とじる</button>
-    </div>
-  </dialog>
+  <dialog id="replaceDialog" class="app-dialog" aria-labelledby="replaceTitle"><div class="dialog-inner"><h2 id="replaceTitle">どの さくひんと いれかえる？</h2><p>さくひんは3まいまでだよ。のこしたい絵をまちがえて消さないように、えらんでね。</p><div id="replaceGrid" class="replace-grid"></div><button class="dialog-close secondary" type="button" data-close-dialog="replaceDialog">やめる</button></div></dialog>
+  <dialog id="viewerDialog" class="app-dialog viewer-dialog" aria-labelledby="viewerTitle"><div class="dialog-inner"><h2 id="viewerTitle">さくひんを みせよう</h2><img id="viewerImage" class="viewer-image" alt="保存した作品"><button class="dialog-close" type="button" data-close-dialog="viewerDialog">とじる</button></div></dialog>
 
   <script src="script.js"></script>
 </body>
