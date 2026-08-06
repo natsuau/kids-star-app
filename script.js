@@ -14,64 +14,69 @@ const pages = {
   gallery: $("#galleryPage")
 };
 
-const title = $("#selectedStarTitle");
-const practiceTitle = $("#practiceTitle");
-const instruction = $("#instruction");
-const modeLabel = $("#modeLabel");
-const celebration = $("#clearCelebration");
-const replay = $("#replayButton");
-const undo = $("#undoButton");
-const reset = $("#resetButton");
-const speedControls = $("#speedControls");
-const secret = $("#secretStarButton");
-const drawInstruction = $("#drawInstruction");
-const drawUndoButton = $("#drawUndoButton");
-const drawClearButton = $("#drawClearButton");
-const drawSaveButton = $("#drawSaveButton");
-const galleryButton = $("#galleryButton");
-const galleryGrid = $("#galleryGrid");
-const galleryStatus = $("#galleryStatus");
-const replaceDialog = $("#replaceDialog");
-const replaceGrid = $("#replaceGrid");
-const viewerDialog = $("#viewerDialog");
-const viewerImage = $("#viewerImage");
+const ui = {
+  title: $("#selectedStarTitle"),
+  practiceTitle: $("#practiceTitle"),
+  instruction: $("#instruction"),
+  modeLabel: $("#modeLabel"),
+  celebration: $("#clearCelebration"),
+  replay: $("#replayButton"),
+  undo: $("#undoButton"),
+  reset: $("#resetButton"),
+  speed: $("#speedControls"),
+  secret: $("#secretStarButton"),
+  drawInstruction: $("#drawInstruction"),
+  drawUndo: $("#drawUndoButton"),
+  drawClear: $("#drawClearButton"),
+  drawSave: $("#drawSaveButton"),
+  galleryButton: $("#galleryButton"),
+  galleryGrid: $("#galleryGrid"),
+  galleryStatus: $("#galleryStatus"),
+  replaceDialog: $("#replaceDialog"),
+  replaceGrid: $("#replaceGrid"),
+  viewerDialog: $("#viewerDialog"),
+  viewerImage: $("#viewerImage")
+};
 
-const CFG = { 5: { step: 2 }, 7: { step: 3 }, 8: { step: 3 }, 10: { step: 3 }, 12: { step: 5 }, 16: { step: 7 } };
-const LABEL = { 5: "5芒星", 7: "7芒星", 8: "8芒星", 10: "10芒星", 12: "12芒星", 16: "ひみつの16芒星" };
+const STARS = {
+  5: { step: 2, label: "5芒星" },
+  7: { step: 3, label: "7芒星" },
+  8: { step: 3, label: "8芒星" },
+  10: { step: 3, label: "10芒星" },
+  12: { step: 5, label: "12芒星" },
+  16: { step: 7, label: "ひみつの16芒星" }
+};
+const MODES = {
+  watch: ["書き方を見る", "くろい せんが うごくよ。じゅんばんを よく みてね。"],
+  trace: ["なぞって書く", "うすい おてほんの せんを、ひかる てんから なぞろう。"],
+  try: ["自分で一筆書き", "どの てんからでも いいよ。どちら向きでも かけるよ！"]
+};
 const CLEAR_STORE = "kids-star-app-cleared-v2";
 const ART_STORE = "kids-star-app-artworks-v1";
-const C = { x: 300, y: 300 };
-const R = 218;
-const DOT = 16;
-const HIT = 43;
+const CENTER = { x: 300, y: 300 };
+const RADIUS = 218;
+const DOT_RADIUS = 16;
+const START_RADIUS = 43;
+const SNAP_RADIUS = 24;
 
 let star = 5;
 let mode = "watch";
-let pts = [];
+let points = [];
 let sequence = [];
+let candidateSequences = [];
 let edges = [];
-let wrongEdges = [];
-let drawing = null;
-let index = 0;
-let raf = null;
+let liveStroke = null;
+let edgeIndex = 0;
+let animationFrame = null;
 let speed = "normal";
 let complete = false;
-let startDot = null;
 
 let freeStrokes = [];
-let freeDrawing = null;
+let freeStroke = null;
 let pendingArtwork = null;
 
-const modes = {
-  watch: ["書き方を見る", "くろい せんが うごくよ。じゅんばんを よく みてね。"],
-  trace: ["なぞって書く", "うすい おてほんの せんを、ひかる てんから なぞろう。"],
-  try: ["自分で一筆書き", "どの てんからでも いいよ。ゆびを はなさず さいごまで！"]
-};
-
-function page(name) {
-  Object.entries(pages).forEach(([key, value]) => {
-    value.hidden = key !== name;
-  });
+function showPage(name) {
+  Object.entries(pages).forEach(([key, value]) => { value.hidden = key !== name; });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -85,398 +90,346 @@ function closeDialog(dialog) {
   else dialog.removeAttribute("open");
 }
 
-function cleared() {
-  try {
-    return new Set(JSON.parse(localStorage.getItem(CLEAR_STORE) || "[]").map(String));
-  } catch {
-    return new Set();
-  }
+function readJson(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+  catch { return fallback; }
+}
+
+function clearedStars() {
+  return new Set(readJson(CLEAR_STORE, []).map(String));
 }
 
 function saveClear() {
-  const saved = cleared();
+  const saved = clearedStars();
   saved.add(String(star));
   localStorage.setItem(CLEAR_STORE, JSON.stringify([...saved]));
   refreshProgress();
 }
 
 function refreshProgress() {
-  const saved = cleared();
-  $$('[data-clear-for]').forEach(badge => {
-    badge.hidden = !saved.has(badge.dataset.clearFor);
-  });
-  const open = saved.has("12");
-  secret.disabled = !open;
-  secret.classList.toggle("locked", !open);
-  secret.querySelector(".lock-mark").textContent = open ? "✨" : "🔒";
+  const saved = clearedStars();
+  $$('[data-clear-for]').forEach(badge => { badge.hidden = !saved.has(badge.dataset.clearFor); });
+  const unlocked = saved.has("12");
+  ui.secret.disabled = !unlocked;
+  ui.secret.classList.toggle("locked", !unlocked);
+  ui.secret.querySelector(".lock-mark").textContent = unlocked ? "✨" : "🔒";
   drawPreviews();
 }
 
-function makeSequence(n, start = 0) {
+function makeSequence(count, start = 0, direction = 1) {
   const result = [start];
-  const step = CFG[n].step;
-  let point = start;
-  for (let i = 0; i < n; i += 1) {
-    point = (point + step) % n;
-    result.push(point);
+  const step = STARS[count].step * direction;
+  let current = start;
+  for (let i = 0; i < count; i += 1) {
+    current = (current + step + count) % count;
+    result.push(current);
   }
   return result;
 }
 
-function makePoints(n, radius = R, center = C) {
-  return Array.from({ length: n }, (_, i) => {
-    const angle = -Math.PI / 2 + i * Math.PI * 2 / n;
-    return {
-      x: center.x + Math.cos(angle) * radius,
-      y: center.y + Math.sin(angle) * radius
-    };
+function makePoints(count, radius = RADIUS, center = CENTER) {
+  return Array.from({ length: count }, (_, index) => {
+    const angle = -Math.PI / 2 + index * Math.PI * 2 / count;
+    return { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius };
   });
 }
 
 function drawPreviews() {
   $$(".star-preview").forEach(preview => {
-    const n = Number(preview.dataset.preview);
-    const points = makePoints(n, 58, { x: 75, y: 75 });
-    const previewSequence = makeSequence(n);
+    const count = Number(preview.dataset.preview);
+    const previewPoints = makePoints(count, 58, { x: 75, y: 75 });
+    const order = makeSequence(count);
     const previewCtx = preview.getContext("2d");
-    const locked = n === 16 && !cleared().has("12");
+    const locked = count === 16 && !clearedStars().has("12");
     previewCtx.clearRect(0, 0, 150, 150);
     previewCtx.beginPath();
-    previewCtx.moveTo(points[previewSequence[0]].x, points[previewSequence[0]].y);
-    previewSequence.slice(1).forEach(i => previewCtx.lineTo(points[i].x, points[i].y));
+    previewCtx.moveTo(previewPoints[order[0]].x, previewPoints[order[0]].y);
+    order.slice(1).forEach(index => previewCtx.lineTo(previewPoints[index].x, previewPoints[index].y));
     previewCtx.strokeStyle = locked ? "#8e8e8e" : "#f0ad20";
     previewCtx.lineWidth = 6;
-    previewCtx.lineJoin = "round";
-    previewCtx.lineCap = "round";
+    previewCtx.lineJoin = previewCtx.lineCap = "round";
     previewCtx.stroke();
   });
 }
 
-function selectStar(n) {
-  if (n === 16 && secret.disabled) return;
-  star = n;
-  title.textContent = LABEL[n];
-  page("mode");
+function selectStar(count) {
+  if (count === 16 && ui.secret.disabled) return;
+  star = count;
+  ui.title.textContent = STARS[count].label;
+  showPage("mode");
 }
 
 function startMode(nextMode) {
   mode = nextMode;
-  practiceTitle.textContent = LABEL[star];
-  modeLabel.textContent = modes[nextMode][0];
-  instruction.textContent = modes[nextMode][1];
-  speedControls.hidden = nextMode !== "watch";
-  replay.hidden = nextMode !== "watch";
-  undo.hidden = nextMode === "watch";
-  reset.hidden = nextMode === "watch";
-  page("practice");
-  restart();
+  ui.practiceTitle.textContent = STARS[star].label;
+  ui.modeLabel.textContent = MODES[nextMode][0];
+  ui.instruction.textContent = MODES[nextMode][1];
+  ui.speed.hidden = nextMode !== "watch";
+  ui.replay.hidden = nextMode !== "watch";
+  ui.undo.hidden = nextMode === "watch";
+  ui.reset.hidden = nextMode === "watch";
+  showPage("practice");
+  restartPractice();
 }
 
-function restart() {
-  cancelAnimationFrame(raf);
+function restartPractice() {
+  cancelAnimationFrame(animationFrame);
   edges = [];
-  wrongEdges = [];
-  drawing = null;
-  index = 0;
-  startDot = null;
+  liveStroke = null;
+  edgeIndex = 0;
   complete = false;
-  celebration.hidden = true;
-  pts = makePoints(star);
+  candidateSequences = [];
+  ui.celebration.hidden = true;
+  points = makePoints(star);
   sequence = makeSequence(star);
-  render();
+  renderStar();
   if (mode === "watch") animateGuide();
 }
 
 function animateGuide() {
-  cancelAnimationFrame(raf);
   edges = [];
   let segment = 0;
   let startedAt = performance.now();
-
   const tick = now => {
     const duration = speed === "slow" ? 900 : 480;
     const progress = Math.min((now - startedAt) / duration, 1);
-    render({ segment, progress });
+    renderStar({ segment, progress });
     if (progress === 1) {
       edges.push([sequence[segment], sequence[segment + 1]]);
       segment += 1;
       startedAt = now;
       if (segment >= sequence.length - 1) {
-        render();
-        instruction.textContent = "さいごまで みられたね！";
+        renderStar();
+        ui.instruction.textContent = "さいごまで みられたね！";
         return;
       }
     }
-    raf = requestAnimationFrame(tick);
+    animationFrame = requestAnimationFrame(tick);
   };
-
-  raf = requestAnimationFrame(tick);
+  animationFrame = requestAnimationFrame(tick);
 }
 
-function pos(event) {
-  const rect = canvas.getBoundingClientRect();
+function canvasPoint(event, targetCanvas = canvas) {
+  const rect = targetCanvas.getBoundingClientRect();
   return {
-    x: (event.clientX - rect.left) * 600 / rect.width,
-    y: (event.clientY - rect.top) * 600 / rect.height
+    x: (event.clientX - rect.left) * targetCanvas.width / rect.width,
+    y: (event.clientY - rect.top) * targetCanvas.height / rect.height
   };
 }
 
-function near(point, candidates) {
-  let hit = null;
-  let best = HIT;
-  candidates.forEach(i => {
-    const distance = Math.hypot(point.x - pts[i].x, point.y - pts[i].y);
-    if (distance <= best) {
-      best = distance;
-      hit = i;
-    }
+function nearest(point, indexes, radius) {
+  let result = null;
+  let best = radius;
+  indexes.forEach(index => {
+    const distance = Math.hypot(point.x - points[index].x, point.y - points[index].y);
+    if (distance <= best) { best = distance; result = index; }
   });
-  return hit;
+  return result;
 }
 
 function drawGuideShape() {
   if (mode !== "trace") return;
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(pts[sequence[0]].x, pts[sequence[0]].y);
-  sequence.slice(1).forEach(i => ctx.lineTo(pts[i].x, pts[i].y));
+  ctx.moveTo(points[sequence[0]].x, points[sequence[0]].y);
+  sequence.slice(1).forEach(index => ctx.lineTo(points[index].x, points[index].y));
   ctx.strokeStyle = "rgba(38,52,59,.26)";
   ctx.lineWidth = 8;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  ctx.lineCap = ctx.lineJoin = "round";
   ctx.stroke();
   ctx.restore();
 }
 
-function drawEdges(list, color, width) {
+function drawEdges() {
   ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  list.forEach(([from, to]) => {
+  ctx.strokeStyle = "#4ca9d2";
+  ctx.lineWidth = 11;
+  ctx.lineCap = ctx.lineJoin = "round";
+  edges.forEach(([from, to]) => {
     ctx.beginPath();
-    ctx.moveTo(pts[from].x, pts[from].y);
-    ctx.lineTo(pts[to].x, pts[to].y);
+    ctx.moveTo(points[from].x, points[from].y);
+    ctx.lineTo(points[to].x, points[to].y);
     ctx.stroke();
   });
   ctx.restore();
 }
 
-function render(animation = null) {
+function renderStar(animation = null) {
   ctx.clearRect(0, 0, 600, 600);
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, 600, 600);
-
   ctx.save();
   ctx.beginPath();
-  ctx.arc(300, 300, R, 0, Math.PI * 2);
+  ctx.arc(300, 300, RADIUS, 0, Math.PI * 2);
   ctx.setLineDash([8, 11]);
   ctx.strokeStyle = "rgba(81,139,158,.2)";
   ctx.lineWidth = 4;
   ctx.stroke();
   ctx.restore();
-
   drawGuideShape();
-  drawEdges(edges, "#4ca9d2", 11);
-  drawEdges(wrongEdges, "#e86d6d", 9);
+  drawEdges();
 
   if (animation) {
-    const from = pts[sequence[animation.segment]];
-    const to = pts[sequence[animation.segment + 1]];
-    const x = from.x + (to.x - from.x) * animation.progress;
-    const y = from.y + (to.y - from.y) * animation.progress;
+    const from = points[sequence[animation.segment]];
+    const to = points[sequence[animation.segment + 1]];
     ctx.beginPath();
     ctx.moveTo(from.x, from.y);
-    ctx.lineTo(x, y);
+    ctx.lineTo(from.x + (to.x - from.x) * animation.progress, from.y + (to.y - from.y) * animation.progress);
     ctx.strokeStyle = "#26343b";
     ctx.lineWidth = 10;
     ctx.lineCap = "round";
     ctx.stroke();
   }
 
-  if (drawing) {
+  if (liveStroke) {
     ctx.beginPath();
-    ctx.moveTo(pts[drawing.from].x, pts[drawing.from].y);
-    drawing.path.forEach(point => ctx.lineTo(point.x, point.y));
+    ctx.moveTo(points[liveStroke.from].x, points[liveStroke.from].y);
+    liveStroke.path.forEach(point => ctx.lineTo(point.x, point.y));
     ctx.strokeStyle = "#ec78ad";
     ctx.lineWidth = 9;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap = ctx.lineJoin = "round";
     ctx.stroke();
   }
 
   if (!complete) {
-    const active = mode === "trace" ? [sequence[index], sequence[index + 1]].filter(Number.isInteger) : [];
-    pts.forEach((point, i) => {
-      const on = active.includes(i);
+    const active = mode === "trace" ? [sequence[edgeIndex], sequence[edgeIndex + 1]] : [];
+    points.forEach((point, index) => {
+      const on = active.includes(index);
       ctx.beginPath();
-      ctx.arc(point.x, point.y, on ? DOT + 5 : DOT, 0, Math.PI * 2);
+      ctx.arc(point.x, point.y, on ? DOT_RADIUS + 5 : DOT_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = on ? "#ffcc3f" : "#fff";
       ctx.strokeStyle = on ? "#e99b22" : "#5bb4c9";
       ctx.lineWidth = on ? 5 : 4;
-      if (on) {
-        ctx.shadowColor = "rgba(255,187,48,.7)";
-        ctx.shadowBlur = 16;
-      } else {
-        ctx.shadowBlur = 0;
-      }
       ctx.fill();
       ctx.stroke();
     });
-    ctx.shadowBlur = 0;
   }
 }
 
-function down(event) {
+function startStarStroke(event) {
   if (mode === "watch" || complete) return;
-  const point = pos(event);
-  let hit = null;
+  const position = canvasPoint(event);
+  let start = null;
 
   if (mode === "trace") {
-    const needed = sequence[index];
-    hit = near(point, [needed]);
-    if (hit === null) {
-      instruction.textContent = index ? "ひかっている てんから つづけてね。" : "ひかっている さいしょの てんから はじめてね。";
-      return;
+    start = nearest(position, [sequence[edgeIndex]], START_RADIUS);
+  } else if (edgeIndex === 0) {
+    start = nearest(position, points.map((_, index) => index), START_RADIUS);
+    if (start !== null) {
+      candidateSequences = [makeSequence(star, start, 1), makeSequence(star, start, -1)];
+      sequence = candidateSequences[0];
     }
-  } else if (index === 0) {
-    hit = near(point, pts.map((_, i) => i));
-    if (hit === null) {
-      instruction.textContent = "すきな てんの うえから はじめてね。";
-      return;
-    }
-    startDot = hit;
-    sequence = makeSequence(star, startDot);
   } else {
-    hit = near(point, [sequence[index]]);
-    if (hit === null) {
-      instruction.textContent = "いまの てんから つづけてね。";
-      return;
-    }
+    start = nearest(position, [sequence[edgeIndex]], START_RADIUS);
   }
 
+  if (start === null) {
+    ui.instruction.textContent = mode === "try" ? "すきな てんの まんなかから はじめてね。" : "ひかっている てんから はじめてね。";
+    return;
+  }
   event.preventDefault();
   canvas.setPointerCapture(event.pointerId);
-  drawing = { from: hit, path: [pts[hit]], pointer: event.pointerId, lastWrong: null };
-  render();
+  liveStroke = { from: start, path: [points[start]], pointer: event.pointerId };
+  renderStar();
 }
 
-function move(event) {
-  if (!drawing || drawing.pointer !== event.pointerId) return;
-  event.preventDefault();
-  const point = pos(event);
-  drawing.path.push(point);
-  const target = sequence[index + 1];
+function nextTargets() {
+  if (mode !== "try" || edgeIndex > 0 || candidateSequences.length < 2) return [sequence[edgeIndex + 1]];
+  return [...new Set(candidateSequences.map(candidate => candidate[1]))];
+}
 
-  if (Number.isInteger(target) && near(point, [target]) !== null) {
-    edges.push([sequence[index], target]);
-    index += 1;
-    drawing.from = target;
-    drawing.path = [pts[target]];
-    drawing.lastWrong = null;
-    if (index === sequence.length - 1) {
-      finish(mode === "try");
-      return;
-    }
-    render();
+function moveStarStroke(event) {
+  if (!liveStroke || liveStroke.pointer !== event.pointerId) return;
+  event.preventDefault();
+  const position = canvasPoint(event);
+  liveStroke.path.push(position);
+  const targets = nextTargets();
+  const reached = nearest(position, targets, SNAP_RADIUS);
+  if (reached === null) {
+    renderStar();
     return;
   }
 
-  const others = pts.map((_, i) => i).filter(i => i !== drawing.from && i !== target);
-  const bad = near(point, others);
-  if (bad !== null && drawing.lastWrong !== bad) {
-    wrongEdges.push([drawing.from, bad]);
-    drawing.lastWrong = bad;
-    instruction.textContent = "その せんだけ あかくしたよ。『ひとつもどる』で けせるよ。";
+  if (mode === "try" && edgeIndex === 0 && candidateSequences.length === 2) {
+    sequence = candidateSequences.find(candidate => candidate[1] === reached) || candidateSequences[0];
+    candidateSequences = [sequence];
   }
-  render();
+  edges.push([sequence[edgeIndex], reached]);
+  edgeIndex += 1;
+  liveStroke.from = reached;
+  liveStroke.path = [points[reached]];
+  if (edgeIndex === sequence.length - 1) finishStar();
+  else renderStar();
 }
 
-function up(event) {
-  if (!drawing || drawing.pointer !== event.pointerId) return;
-  drawing = null;
+function endStarStroke(event) {
+  if (!liveStroke || liveStroke.pointer !== event.pointerId) return;
+  liveStroke = null;
   if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
-  if (index < sequence.length - 1) {
+  if (edgeIndex < sequence.length - 1) {
     if (mode === "try") {
-      instruction.textContent = "ゆびを はなさず、さいごまで かいてみよう！";
+      ui.instruction.textContent = "ゆびを はなさず、さいごまで かいてみよう！";
       edges = [];
-      wrongEdges = [];
-      index = 0;
-      startDot = null;
+      edgeIndex = 0;
+      candidateSequences = [];
       sequence = makeSequence(star);
     } else {
-      instruction.textContent = "せんは のこっているよ。ひかる てんから つづけよう。";
+      ui.instruction.textContent = "せんは のこっているよ。ひかる てんから つづけよう。";
     }
   }
-  render();
+  renderStar();
 }
 
-function finish(self) {
-  const pointerId = drawing ? drawing.pointer : null;
-  drawing = null;
-  if (pointerId !== null && canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
+function finishStar() {
+  const pointer = liveStroke?.pointer;
+  liveStroke = null;
+  if (pointer !== undefined && canvas.hasPointerCapture(pointer)) canvas.releasePointerCapture(pointer);
   complete = true;
-  render();
-  if (mode === "try" && self && wrongEdges.length === 0) {
+  renderStar();
+  if (mode === "try") {
     saveClear();
-    celebration.hidden = false;
-    instruction.textContent = "じぶんの ちからで できたね！";
+    ui.celebration.hidden = false;
+    ui.instruction.textContent = "すきな てんから きれいに かけたね！";
   } else {
-    instruction.textContent = "なぞった せんが きれいに のこったね！";
+    ui.instruction.textContent = "なぞった せんが きれいに のこったね！";
   }
 }
 
-function artworkList() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(ART_STORE) || "[]");
-    return Array.isArray(parsed) ? parsed.filter(item => typeof item === "string").slice(0, 3) : [];
-  } catch {
-    return [];
-  }
+function artworks() {
+  const list = readJson(ART_STORE, []);
+  return Array.isArray(list) ? list.filter(item => typeof item === "string").slice(0, 3) : [];
 }
 
-function storeArtworks(list) {
+function saveArtworks(list) {
   try {
     localStorage.setItem(ART_STORE, JSON.stringify(list.slice(0, 3)));
     updateArtworkCount();
     renderGallery();
     return true;
   } catch {
-    drawInstruction.textContent = "ほぞんできなかったよ。ブラウザの空きようりょうを たしかめてね。";
+    ui.drawInstruction.textContent = "ほぞんできなかったよ。ブラウザの空きようりょうを たしかめてね。";
     return false;
   }
 }
 
 function updateArtworkCount() {
-  const count = artworkList().length;
-  galleryButton.textContent = `🖼️ さくひん ${count}/3`;
+  ui.galleryButton.textContent = `🖼️ さくひん ${artworks().length}/3`;
 }
 
-function freePos(event) {
-  const rect = freeCanvas.getBoundingClientRect();
-  return {
-    x: (event.clientX - rect.left) * 600 / rect.width,
-    y: (event.clientY - rect.top) * 600 / rect.height
-  };
-}
-
-function drawStroke(targetCtx, points) {
-  if (!points.length) return;
+function drawFreeStroke(targetCtx, stroke) {
+  if (!stroke.length) return;
   targetCtx.save();
-  targetCtx.strokeStyle = "#ec78ad";
-  targetCtx.fillStyle = "#ec78ad";
+  targetCtx.strokeStyle = targetCtx.fillStyle = "#ec78ad";
   targetCtx.lineWidth = 10;
-  targetCtx.lineCap = "round";
-  targetCtx.lineJoin = "round";
-  if (points.length === 1) {
+  targetCtx.lineCap = targetCtx.lineJoin = "round";
+  if (stroke.length === 1) {
     targetCtx.beginPath();
-    targetCtx.arc(points[0].x, points[0].y, 5, 0, Math.PI * 2);
+    targetCtx.arc(stroke[0].x, stroke[0].y, 5, 0, Math.PI * 2);
     targetCtx.fill();
   } else {
     targetCtx.beginPath();
-    targetCtx.moveTo(points[0].x, points[0].y);
-    points.slice(1).forEach(point => targetCtx.lineTo(point.x, point.y));
+    targetCtx.moveTo(stroke[0].x, stroke[0].y);
+    stroke.slice(1).forEach(point => targetCtx.lineTo(point.x, point.y));
     targetCtx.stroke();
   }
   targetCtx.restore();
@@ -486,56 +439,62 @@ function renderFree(targetCtx = freeCtx) {
   targetCtx.clearRect(0, 0, 600, 600);
   targetCtx.fillStyle = "#fff";
   targetCtx.fillRect(0, 0, 600, 600);
-  freeStrokes.forEach(stroke => drawStroke(targetCtx, stroke));
-  if (freeDrawing) drawStroke(targetCtx, freeDrawing.points);
-  const hasDrawing = freeStrokes.length > 0 || Boolean(freeDrawing);
-  drawUndoButton.disabled = !freeStrokes.length;
-  drawClearButton.disabled = !hasDrawing;
-  drawSaveButton.disabled = !freeStrokes.length;
+  freeStrokes.forEach(stroke => drawFreeStroke(targetCtx, stroke));
+  if (freeStroke) drawFreeStroke(targetCtx, freeStroke.points);
+  ui.drawUndo.disabled = !freeStrokes.length;
+  ui.drawClear.disabled = !freeStrokes.length && !freeStroke;
+  ui.drawSave.disabled = !freeStrokes.length;
 }
 
-function freeDown(event) {
+function startFreeStroke(event) {
   event.preventDefault();
   freeCanvas.setPointerCapture(event.pointerId);
-  freeDrawing = { pointer: event.pointerId, points: [freePos(event)] };
+  freeStroke = { pointer: event.pointerId, points: [canvasPoint(event, freeCanvas)] };
   renderFree();
 }
-
-function freeMove(event) {
-  if (!freeDrawing || freeDrawing.pointer !== event.pointerId) return;
+function moveFreeStroke(event) {
+  if (!freeStroke || freeStroke.pointer !== event.pointerId) return;
   event.preventDefault();
-  freeDrawing.points.push(freePos(event));
+  freeStroke.points.push(canvasPoint(event, freeCanvas));
   renderFree();
 }
-
-function freeUp(event) {
-  if (!freeDrawing || freeDrawing.pointer !== event.pointerId) return;
-  const stroke = freeDrawing.points;
-  freeDrawing = null;
-  freeStrokes.push(stroke);
+function endFreeStroke(event) {
+  if (!freeStroke || freeStroke.pointer !== event.pointerId) return;
+  freeStrokes.push(freeStroke.points);
+  freeStroke = null;
   if (freeCanvas.hasPointerCapture(event.pointerId)) freeCanvas.releasePointerCapture(event.pointerId);
-  drawInstruction.textContent = "いいね！ つづけて かいても、ほぞんしても いいよ。";
+  ui.drawInstruction.textContent = "いいね！ つづけて かいても、ほぞんしても いいよ。";
   renderFree();
 }
 
 function exportArtwork() {
   const exportCanvas = document.createElement("canvas");
-  exportCanvas.width = 600;
-  exportCanvas.height = 600;
-  const exportCtx = exportCanvas.getContext("2d");
-  renderFree(exportCtx);
+  exportCanvas.width = exportCanvas.height = 600;
+  renderFree(exportCanvas.getContext("2d"));
   try {
-    const webp = exportCanvas.toDataURL("image/webp", 0.86);
-    if (webp.startsWith("data:image/webp")) return webp;
-  } catch {
-    // PNG fallback below.
-  }
+    const image = exportCanvas.toDataURL("image/webp", 0.86);
+    if (image.startsWith("data:image/webp")) return image;
+  } catch {}
   return exportCanvas.toDataURL("image/png");
 }
 
+function saveArtwork() {
+  if (!freeStrokes.length) return;
+  const image = exportArtwork();
+  const list = artworks();
+  if (list.length < 3) {
+    list.push(image);
+    if (saveArtworks(list)) ui.drawInstruction.textContent = `さくひんを ほぞんしたよ！ ${list.length}/3`;
+  } else {
+    pendingArtwork = image;
+    renderReplaceChoices();
+    openDialog(ui.replaceDialog);
+  }
+}
+
 function renderReplaceChoices() {
-  replaceGrid.replaceChildren();
-  artworkList().forEach((image, index) => {
+  ui.replaceGrid.replaceChildren();
+  artworks().forEach((image, index) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "replace-choice";
@@ -546,183 +505,112 @@ function renderReplaceChoices() {
     const label = document.createElement("span");
     label.textContent = `${index + 1}まいめと いれかえる`;
     button.append(img, label);
-    replaceGrid.append(button);
+    ui.replaceGrid.append(button);
   });
 }
 
-function saveArtwork() {
-  if (!freeStrokes.length) {
-    drawInstruction.textContent = "まずは なにか かいてみよう。";
-    return;
-  }
-  const image = exportArtwork();
-  const artworks = artworkList();
-  if (artworks.length < 3) {
-    artworks.push(image);
-    if (storeArtworks(artworks)) drawInstruction.textContent = `さくひんを ほぞんしたよ！ ${artworks.length}/3`;
-    return;
-  }
-  pendingArtwork = image;
-  renderReplaceChoices();
-  openDialog(replaceDialog);
-}
-
-function openDrawingPage() {
-  page("draw");
-  drawInstruction.textContent = freeStrokes.length ? "つづきから かけるよ。" : "ゆびで すきなものを かいてね。";
-  renderFree();
-  updateArtworkCount();
-}
-
 function renderGallery() {
-  const artworks = artworkList();
-  galleryGrid.replaceChildren();
-  galleryStatus.textContent = artworks.length ? `${artworks.length}まいの さくひんが あるよ。タップして大きく見せよう。` : "まだ さくひんが ないよ。おえかきして ほぞんしてね。";
-
+  const list = artworks();
+  ui.galleryGrid.replaceChildren();
+  ui.galleryStatus.textContent = list.length ? `${list.length}まいの さくひんが あるよ。` : "まだ さくひんが ないよ。";
   for (let index = 0; index < 3; index += 1) {
     const card = document.createElement("article");
     card.className = "gallery-card";
-    const heading = document.createElement("h3");
-    heading.textContent = `${index + 1}まいめ`;
-    card.append(heading);
-
-    if (artworks[index]) {
-      const viewButton = document.createElement("button");
-      viewButton.type = "button";
-      viewButton.className = "artwork-view";
-      viewButton.dataset.viewIndex = String(index);
+    card.innerHTML = `<h3>${index + 1}まいめ</h3>`;
+    if (list[index]) {
+      const view = document.createElement("button");
+      view.type = "button";
+      view.className = "artwork-view";
+      view.dataset.viewIndex = String(index);
       const img = document.createElement("img");
-      img.src = artworks[index];
+      img.src = list[index];
       img.alt = `保存した作品 ${index + 1}`;
-      viewButton.append(img);
-      const deleteButton = document.createElement("button");
-      deleteButton.type = "button";
-      deleteButton.className = "delete-artwork";
-      deleteButton.dataset.deleteIndex = String(index);
-      deleteButton.textContent = "このさくひんを けす";
-      card.append(viewButton, deleteButton);
+      view.append(img);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "delete-artwork";
+      remove.dataset.deleteIndex = String(index);
+      remove.textContent = "このさくひんを けす";
+      card.append(view, remove);
     } else {
       const empty = document.createElement("div");
       empty.className = "empty-artwork";
-      empty.innerHTML = "<span aria-hidden=\"true\">☆</span><p>ここに ほぞんできるよ</p>";
+      empty.innerHTML = '<span aria-hidden="true">☆</span><p>ここに ほぞんできるよ</p>';
       card.append(empty);
     }
-    galleryGrid.append(card);
+    ui.galleryGrid.append(card);
   }
 }
 
-function deleteArtwork(index) {
-  const artworks = artworkList();
-  if (!artworks[index]) return;
-  if (!window.confirm("この さくひんを けしても いい？")) return;
-  artworks.splice(index, 1);
-  storeArtworks(artworks);
-}
+canvas.addEventListener("pointerdown", startStarStroke);
+canvas.addEventListener("pointermove", moveStarStroke);
+canvas.addEventListener("pointerup", endStarStroke);
+canvas.addEventListener("pointercancel", endStarStroke);
+freeCanvas.addEventListener("pointerdown", startFreeStroke);
+freeCanvas.addEventListener("pointermove", moveFreeStroke);
+freeCanvas.addEventListener("pointerup", endFreeStroke);
+freeCanvas.addEventListener("pointercancel", endFreeStroke);
 
-canvas.addEventListener("pointerdown", down);
-canvas.addEventListener("pointermove", move);
-canvas.addEventListener("pointerup", up);
-canvas.addEventListener("pointercancel", up);
-
-freeCanvas.addEventListener("pointerdown", freeDown);
-freeCanvas.addEventListener("pointermove", freeMove);
-freeCanvas.addEventListener("pointerup", freeUp);
-freeCanvas.addEventListener("pointercancel", freeUp);
-
-undo.addEventListener("click", () => {
-  if (wrongEdges.length) {
-    wrongEdges.pop();
-    instruction.textContent = "まちがえた せんを ひとつ けしたよ。";
-  } else if (edges.length) {
-    edges.pop();
-    index = Math.max(0, index - 1);
-    complete = false;
-    celebration.hidden = true;
-  }
-  render();
+ui.undo.addEventListener("click", () => {
+  if (!edges.length) return;
+  edges.pop();
+  edgeIndex = Math.max(0, edgeIndex - 1);
+  complete = false;
+  ui.celebration.hidden = true;
+  renderStar();
 });
-reset.addEventListener("click", restart);
-replay.addEventListener("click", restart);
-
+ui.reset.addEventListener("click", restartPractice);
+ui.replay.addEventListener("click", restartPractice);
 $$('[data-speed]').forEach(button => button.addEventListener("click", () => {
   speed = button.dataset.speed;
   $$('[data-speed]').forEach(item => item.classList.toggle("selected", item === button));
-  restart();
+  restartPractice();
 }));
-
 $$('[data-star]').forEach(button => button.addEventListener("click", () => selectStar(Number(button.dataset.star))));
 $$('[data-mode]').forEach(button => button.addEventListener("click", () => startMode(button.dataset.mode)));
 
-$("#modeBackButton").addEventListener("click", () => page("menu"));
-$("#practiceBackButton").addEventListener("click", () => {
-  cancelAnimationFrame(raf);
-  page("mode");
+$("#modeBackButton").addEventListener("click", () => showPage("menu"));
+$("#practiceBackButton").addEventListener("click", () => { cancelAnimationFrame(animationFrame); showPage("mode"); });
+$("#freeDrawButton").addEventListener("click", () => { showPage("draw"); renderFree(); updateArtworkCount(); });
+$("#drawBackButton").addEventListener("click", () => showPage("menu"));
+$("#galleryBackButton").addEventListener("click", () => showPage("draw"));
+$("#mathButton").addEventListener("click", () => openDialog($("#mathDialog")));
+$$("[data-close-dialog]").forEach(button => button.addEventListener("click", () => closeDialog(document.getElementById(button.dataset.closeDialog))));
+$$("dialog").forEach(dialog => dialog.addEventListener("click", event => { if (event.target === dialog) closeDialog(dialog); }));
+
+ui.drawUndo.addEventListener("click", () => { freeStrokes.pop(); renderFree(); });
+ui.drawClear.addEventListener("click", () => {
+  if (window.confirm("ぜんぶ けしても いい？")) { freeStrokes = []; freeStroke = null; renderFree(); }
 });
-$("#freeDrawButton").addEventListener("click", openDrawingPage);
-$("#drawBackButton").addEventListener("click", () => page("menu"));
-$("#galleryBackButton").addEventListener("click", openDrawingPage);
-$("#benefitButton").addEventListener("click", () => openDialog($("#benefitDialog")));
-
-$$("[data-close-dialog]").forEach(button => button.addEventListener("click", () => {
-  closeDialog(document.getElementById(button.dataset.closeDialog));
-}));
-
-$$("dialog").forEach(dialog => dialog.addEventListener("click", event => {
-  if (event.target === dialog) closeDialog(dialog);
-}));
-
-replaceDialog.addEventListener("close", () => {
-  pendingArtwork = null;
-});
-
-replaceGrid.addEventListener("click", event => {
+ui.drawSave.addEventListener("click", saveArtwork);
+ui.galleryButton.addEventListener("click", () => { renderGallery(); showPage("gallery"); });
+ui.replaceDialog.addEventListener("close", () => { pendingArtwork = null; });
+ui.replaceGrid.addEventListener("click", event => {
   const button = event.target.closest("[data-replace-index]");
   if (!button || !pendingArtwork) return;
-  const artworks = artworkList();
-  const replaceIndex = Number(button.dataset.replaceIndex);
-  artworks[replaceIndex] = pendingArtwork;
-  if (storeArtworks(artworks)) drawInstruction.textContent = `${replaceIndex + 1}まいめと いれかえたよ！`;
+  const list = artworks();
+  list[Number(button.dataset.replaceIndex)] = pendingArtwork;
+  saveArtworks(list);
   pendingArtwork = null;
-  closeDialog(replaceDialog);
+  closeDialog(ui.replaceDialog);
 });
-
-drawUndoButton.addEventListener("click", () => {
-  freeStrokes.pop();
-  drawInstruction.textContent = freeStrokes.length ? "ひとつ もどしたよ。" : "しろい かみに もどったよ。";
-  renderFree();
-});
-
-drawClearButton.addEventListener("click", () => {
-  if (!freeStrokes.length && !freeDrawing) return;
-  if (!window.confirm("ぜんぶ けしても いい？")) return;
-  freeStrokes = [];
-  freeDrawing = null;
-  drawInstruction.textContent = "ぜんぶ けしたよ。もういちど かいてみよう。";
-  renderFree();
-});
-
-drawSaveButton.addEventListener("click", saveArtwork);
-galleryButton.addEventListener("click", () => {
-  renderGallery();
-  page("gallery");
-});
-
-galleryGrid.addEventListener("click", event => {
-  const viewButton = event.target.closest("[data-view-index]");
-  if (viewButton) {
-    const image = artworkList()[Number(viewButton.dataset.viewIndex)];
-    if (image) {
-      viewerImage.src = image;
-      openDialog(viewerDialog);
-    }
+ui.galleryGrid.addEventListener("click", event => {
+  const view = event.target.closest("[data-view-index]");
+  if (view) {
+    ui.viewerImage.src = artworks()[Number(view.dataset.viewIndex)];
+    openDialog(ui.viewerDialog);
     return;
   }
-  const deleteButton = event.target.closest("[data-delete-index]");
-  if (deleteButton) deleteArtwork(Number(deleteButton.dataset.deleteIndex));
+  const remove = event.target.closest("[data-delete-index]");
+  if (remove && window.confirm("この さくひんを けしても いい？")) {
+    const list = artworks();
+    list.splice(Number(remove.dataset.deleteIndex), 1);
+    saveArtworks(list);
+  }
 });
 
 refreshProgress();
-render();
+renderStar();
 renderFree();
 renderGallery();
 updateArtworkCount();
