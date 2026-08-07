@@ -39,7 +39,7 @@
       <div class="mode-heading"><img src="assets/mr-star.svg" alt="" aria-hidden="true"><h2 id="selectedStarTitle"></h2><p>どの れんしゅうを する？</p></div>
       <div class="mode-list">
         <button class="mode-button watch" type="button" data-mode="watch"><span class="mode-number">1</span><span><strong>書き方を見る</strong><small>うごく せんで じゅんばんを みよう</small></span><span>▶</span></button>
-        <button class="mode-button trace" type="button" data-mode="trace"><span class="mode-number">2</span><span><strong>なぞりながら書く</strong><small>ひかる てんを つないでみよう</small></span><span>✍️</span></button>
+        <button class="mode-button trace" type="button" data-mode="trace"><span class="mode-number">2</span><span><strong>なぞりながら書く</strong><small>1から2へ ひかるてんを つなごう</small></span><span>✍️</span></button>
         <button class="mode-button try" type="button" data-mode="try"><span class="mode-number">3</span><span><strong>自分で一筆書き</strong><small>どのてんからでも ちょうせん</small></span><span>✨</span></button>
       </div>
     </section>
@@ -48,7 +48,14 @@
       <div class="practice-topbar"><button class="back-button" id="practiceBackButton" type="button">← もどる</button><span id="modeLabel" class="mode-label"></span></div>
       <h2 id="practiceTitle"></h2><p id="instruction" class="instruction" aria-live="polite"></p>
       <div id="speedControls" class="speed-controls" hidden><span>おてほんの はやさ</span><button type="button" data-speed="slow">ゆっくり</button><button type="button" data-speed="normal" class="selected">ふつう</button></div>
-      <div class="canvas-wrap"><canvas id="starCanvas" width="600" height="600" aria-label="芒星を描くキャンバス"></canvas><div id="clearCelebration" class="celebration" role="status" hidden><div class="sparkle-field" aria-hidden="true">✦　✨　✦</div><div class="mascot-stage" aria-hidden="true"><span class="butt-trail">☆</span><img src="assets/mr-star.svg" alt=""></div><strong>Clear!</strong><span>できたね！</span></div></div>
+      <div class="canvas-wrap">
+        <canvas id="starCanvas" width="600" height="600" aria-label="芒星を描くキャンバス"></canvas>
+        <div id="traceCoach" class="trace-coach" hidden aria-live="polite">
+          <img src="assets/mr-star.svg" alt="ミスタースターくん">
+          <div class="trace-coach-bubble"><strong>1から 2まで つないでね！</strong><span>まずは「1」のてんから スタートだよ</span></div>
+        </div>
+        <div id="clearCelebration" class="celebration" role="status" hidden><div class="sparkle-field" aria-hidden="true">✦　✨　✦</div><div class="mascot-stage" aria-hidden="true"><span class="butt-trail">☆</span><img src="assets/mr-star.svg" alt=""></div><strong>Clear!</strong><span>できたね！</span></div>
+      </div>
       <div class="practice-actions"><button id="replayButton" class="action-button replay" type="button">▶ もういちど見る</button><button id="undoButton" class="action-button undo" type="button">↩ ひとつもどる</button><button id="resetButton" class="action-button reset" type="button">↻ さいしょから</button></div>
     </section>
 
