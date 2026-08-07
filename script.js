@@ -20,6 +20,7 @@ const ui = {
   instruction: $("#instruction"),
   modeLabel: $("#modeLabel"),
   celebration: $("#clearCelebration"),
+  traceCoach: $("#traceCoach"),
   replay: $("#replayButton"),
   undo: $("#undoButton"),
   reset: $("#resetButton"),
@@ -48,7 +49,7 @@ const STARS = {
 };
 const MODES = {
   watch: ["書き方を見る", "くろい せんが うごくよ。じゅんばんを よく みてね。"],
-  trace: ["なぞって書く", "うすい おてほんの せんを、ひかる てんから なぞろう。"],
+  trace: ["なぞって書く", "「1」から「2」へ、ひかる てんを つないでね。"],
   try: ["自分で一筆書き", "どの てんからでも いいよ。どちら向きでも かけるよ！"]
 };
 const CLEAR_STORE = "kids-star-app-cleared-v2";
@@ -180,6 +181,7 @@ function restartPractice() {
   complete = false;
   candidateSequences = [];
   ui.celebration.hidden = true;
+  ui.traceCoach.hidden = mode !== "trace";
   points = makePoints(star);
   sequence = makeSequence(star);
   renderStar();
@@ -254,6 +256,23 @@ function drawEdges() {
   ctx.restore();
 }
 
+function traceRole(index) {
+  if (mode !== "trace" || complete) return null;
+  if (index === sequence[edgeIndex]) return "start";
+  if (index === sequence[edgeIndex + 1]) return "target";
+  return null;
+}
+
+function drawTraceNumber(point, number) {
+  ctx.save();
+  ctx.fillStyle = "#5b4b28";
+  ctx.font = "900 22px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(number, point.x, point.y + 1);
+  ctx.restore();
+}
+
 function renderStar(animation = null) {
   ctx.clearRect(0, 0, 600, 600);
   ctx.fillStyle = "#fff";
@@ -292,16 +311,23 @@ function renderStar(animation = null) {
   }
 
   if (!complete) {
-    const active = mode === "trace" ? [sequence[edgeIndex], sequence[edgeIndex + 1]] : [];
     points.forEach((point, index) => {
-      const on = active.includes(index);
+      const role = traceRole(index);
+      const active = Boolean(role);
       ctx.beginPath();
-      ctx.arc(point.x, point.y, on ? DOT_RADIUS + 5 : DOT_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = on ? "#ffcc3f" : "#fff";
-      ctx.strokeStyle = on ? "#e99b22" : "#5bb4c9";
-      ctx.lineWidth = on ? 5 : 4;
+      ctx.arc(point.x, point.y, active ? DOT_RADIUS + 7 : DOT_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = role === "start" ? "#ffd95c" : role === "target" ? "#ffb6d1" : "#fff";
+      ctx.strokeStyle = role === "start" ? "#df9b23" : role === "target" ? "#e36e9f" : "#5bb4c9";
+      ctx.lineWidth = active ? 5 : 4;
+      if (active) {
+        ctx.shadowColor = role === "start" ? "rgba(255,190,52,.6)" : "rgba(236,120,173,.55)";
+        ctx.shadowBlur = 14;
+      }
       ctx.fill();
       ctx.stroke();
+      ctx.shadowBlur = 0;
+      if (role === "start") drawTraceNumber(point, "1");
+      if (role === "target") drawTraceNumber(point, "2");
     });
   }
 }
@@ -324,7 +350,7 @@ function startStarStroke(event) {
   }
 
   if (start === null) {
-    ui.instruction.textContent = mode === "try" ? "すきな てんの まんなかから はじめてね。" : "ひかっている てんから はじめてね。";
+    ui.instruction.textContent = mode === "try" ? "すきな てんの まんなかから はじめてね。" : "「1」の てんから はじめてね。";
     return;
   }
   event.preventDefault();
@@ -358,6 +384,12 @@ function moveStarStroke(event) {
   edgeIndex += 1;
   liveStroke.from = reached;
   liveStroke.path = [points[reached]];
+
+  if (mode === "trace" && edgeIndex === 1) {
+    ui.traceCoach.hidden = true;
+    ui.instruction.textContent = "できた！ つぎも「1」から「2」へ つないでね。";
+  }
+
   if (edgeIndex === sequence.length - 1) finishStar();
   else renderStar();
 }
@@ -374,7 +406,7 @@ function endStarStroke(event) {
       candidateSequences = [];
       sequence = makeSequence(star);
     } else {
-      ui.instruction.textContent = "せんは のこっているよ。ひかる てんから つづけよう。";
+      ui.instruction.textContent = edgeIndex === 0 ? "「1」から「2」まで つないでね。" : "つぎの「1」から「2」へ つないでね。";
     }
   }
   renderStar();
@@ -385,6 +417,7 @@ function finishStar() {
   liveStroke = null;
   if (pointer !== undefined && canvas.hasPointerCapture(pointer)) canvas.releasePointerCapture(pointer);
   complete = true;
+  ui.traceCoach.hidden = true;
   renderStar();
   if (mode === "try") {
     saveClear();
@@ -557,6 +590,7 @@ ui.undo.addEventListener("click", () => {
   edgeIndex = Math.max(0, edgeIndex - 1);
   complete = false;
   ui.celebration.hidden = true;
+  if (mode === "trace" && edgeIndex === 0) ui.traceCoach.hidden = false;
   renderStar();
 });
 ui.reset.addEventListener("click", restartPractice);
@@ -570,7 +604,7 @@ $$('[data-star]').forEach(button => button.addEventListener("click", () => selec
 $$('[data-mode]').forEach(button => button.addEventListener("click", () => startMode(button.dataset.mode)));
 
 $("#modeBackButton").addEventListener("click", () => showPage("menu"));
-$("#practiceBackButton").addEventListener("click", () => { cancelAnimationFrame(animationFrame); showPage("mode"); });
+$("#practiceBackButton").addEventListener("click", () => { cancelAnimationFrame(animationFrame); ui.traceCoach.hidden = true; showPage("mode"); });
 $("#freeDrawButton").addEventListener("click", () => { showPage("draw"); renderFree(); updateArtworkCount(); });
 $("#drawBackButton").addEventListener("click", () => showPage("menu"));
 $("#galleryBackButton").addEventListener("click", () => showPage("draw"));
